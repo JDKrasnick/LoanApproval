@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { PublicHeader } from '@/components/layout/PublicHeader'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -22,7 +22,7 @@ function stageIndex(status: string) {
   return STATUS_ORDER.indexOf(status)
 }
 
-export default function StatusPage() {
+function StatusContent() {
   const params = useSearchParams()
   const id = params.get('id') ?? ''
   const [app, setApp] = useState<Application | null>(null)
@@ -182,5 +182,13 @@ export default function StatusPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function StatusPage() {
+  return (
+    <Suspense>
+      <StatusContent />
+    </Suspense>
   )
 }
