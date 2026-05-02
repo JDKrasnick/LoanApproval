@@ -82,6 +82,14 @@ export function Step5Review({ onBack }: Props) {
         interest_expense: data.interest_expense ? parseFloat(data.interest_expense) : undefined,
         annual_debt_service: data.annual_debt_service ? parseFloat(data.annual_debt_service) : undefined,
         ebit: data.ebit ? parseFloat(data.ebit) : undefined,
+        collateral_value: data.collateral_value ? parseFloat(data.collateral_value) : undefined,
+        bankruptcies_last_7y: data.bankruptcies_last_7y ? parseInt(data.bankruptcies_last_7y) : 0,
+        industry_metrics: Object.fromEntries(
+          Object.entries(data.industry_metrics)
+            .filter(([, v]) => v !== '' && v != null)
+            .map(([k, v]) => [k, parseFloat(v as string)])
+            .filter(([, v]) => !isNaN(v as number))
+        ),
       }
 
       const result = await api.createApplication(payload) as { id: string }
@@ -122,6 +130,12 @@ export function Step5Review({ onBack }: Props) {
           <Row label="EBITDA" value={data.ebitda ? formatCurrencyFull(parseFloat(data.ebitda)) : undefined} />
           <Row label="Existing Debt" value={data.existing_debt ? formatCurrencyFull(parseFloat(data.existing_debt)) : undefined} />
           <Row label="Total Assets" value={data.total_assets ? formatCurrencyFull(parseFloat(data.total_assets)) : undefined} />
+          <Row label="Collateral Value" value={data.collateral_value ? formatCurrencyFull(parseFloat(data.collateral_value)) : undefined} />
+          <Row label="Annual Debt Service" value={data.annual_debt_service ? formatCurrencyFull(parseFloat(data.annual_debt_service)) : undefined} />
+          <Row label="Bankruptcies (7y)" value={data.bankruptcies_last_7y || '0'} />
+          {Object.entries(data.industry_metrics).filter(([, v]) => v).map(([k, v]) => (
+            <Row key={k} label={k.replace(/_/g, ' ')} value={v} />
+          ))}
         </Section>
 
         <Section title="Documents" step={4}>

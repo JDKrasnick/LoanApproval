@@ -250,7 +250,7 @@ export default function ApplicationDetailPage() {
           {/* Decision Panel */}
           {decision && (
             <Card>
-              <h2 className="text-base font-semibold text-slate-900 mb-3">AI Decision</h2>
+              <h2 className="text-base font-semibold text-slate-900 mb-3">Final Decision</h2>
               <div className={cn(
                 'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold mb-3',
                 decision.outcome === 'approved' ? 'bg-emerald-100 text-emerald-700' :
@@ -260,33 +260,63 @@ export default function ApplicationDetailPage() {
                 {decision.outcome === 'approved' ? '✓ APPROVE' : decision.outcome === 'declined' ? '✗ DECLINE' : '⚠ MANUAL REVIEW'}
               </div>
               {decision.score != null && (
-                <p className="text-sm text-slate-600 mb-2">Score: <span className="font-mono font-semibold">{decision.score.toFixed(1)}</span></p>
+                <p className="text-sm text-slate-600 mb-2">
+                  Final Score: <span className="font-mono font-semibold">{decision.score.toFixed(2)}</span> / 2.00
+                  {decision.rationale.loan_bracket && (
+                    <span className="text-slate-400"> · {decision.rationale.loan_bracket}</span>
+                  )}
+                </p>
               )}
+              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 mb-3">
+                {decision.rationale.company_score != null && (
+                  <div><span className="text-slate-400">Company</span> <span className="font-mono font-semibold">{decision.rationale.company_score.toFixed(2)}</span></div>
+                )}
+                {decision.rationale.industry_score != null && (
+                  <div><span className="text-slate-400">Industry ({decision.rationale.industry_track})</span> <span className="font-mono font-semibold">{decision.rationale.industry_score.toFixed(2)}</span></div>
+                )}
+                {decision.rationale.approve_threshold != null && (
+                  <div><span className="text-slate-400">Approve ≥</span> <span className="font-mono">{decision.rationale.approve_threshold.toFixed(2)}</span></div>
+                )}
+                {decision.rationale.hr_lower_threshold != null && (
+                  <div><span className="text-slate-400">HR ≥</span> <span className="font-mono">{decision.rationale.hr_lower_threshold.toFixed(2)}</span></div>
+                )}
+              </div>
               <p className="text-xs text-slate-600 mb-3">{decision.rationale.summary}</p>
 
               <div className="space-y-1.5 text-xs">
-                {decision.rationale.passes.length > 0 && (
+                {(decision.rationale.hard_stops ?? []).length > 0 && (
                   <div>
-                    <p className="font-medium text-emerald-700 mb-1">Passes ({decision.rationale.passes.length})</p>
-                    {decision.rationale.passes.map(r => (
-                      <p key={r} className="text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> {r}</p>
+                    <p className="font-medium text-red-700 mb-1">Hard Stops</p>
+                    {decision.rationale.hard_stops!.map(r => (
+                      <p key={r} className="text-red-600 flex items-center gap-1"><XCircle className="h-3 w-3" /> {r}</p>
                     ))}
                   </div>
                 )}
-                {decision.rationale.cautions.length > 0 && (
+                {(decision.rationale.caps ?? []).length > 0 && (
                   <div>
-                    <p className="font-medium text-amber-700 mb-1 mt-2">Cautions ({decision.rationale.cautions.length})</p>
-                    {decision.rationale.cautions.map(r => (
+                    <p className="font-medium text-amber-700 mb-1 mt-2">Review Caps</p>
+                    {decision.rationale.caps!.map(r => (
                       <p key={r} className="text-amber-600 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> {r}</p>
                     ))}
                   </div>
                 )}
-                {decision.rationale.hard_fails.length > 0 && (
-                  <div>
-                    <p className="font-medium text-red-700 mb-1 mt-2">Hard Fails ({decision.rationale.hard_fails.length})</p>
-                    {decision.rationale.hard_fails.map(r => (
-                      <p key={r} className="text-red-600 flex items-center gap-1"><XCircle className="h-3 w-3" /> {r}</p>
-                    ))}
+                {decision.triggered_rules?.length > 0 && (
+                  <div className="mt-2">
+                    <p className="font-medium text-slate-700 mb-1">Metric Tiers</p>
+                    {decision.triggered_rules.map(r => {
+                      const cls = r.tier_label === 'approve' ? 'text-emerald-600'
+                        : r.tier_label === 'human_review' ? 'text-amber-600'
+                        : r.tier_label === 'concern' ? 'text-orange-600'
+                        : 'text-red-600'
+                      return (
+                        <p key={`${r.category}-${r.key}`} className={`${cls} flex justify-between`}>
+                          <span>{r.rule}</span>
+                          <span className="font-mono">
+                            {r.value != null ? r.value.toFixed(2) : '—'} · {r.tier_label}
+                          </span>
+                        </p>
+                      )
+                    })}
                   </div>
                 )}
               </div>

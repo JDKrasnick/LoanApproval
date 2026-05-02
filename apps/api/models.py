@@ -73,6 +73,9 @@ class Application(Base):
     interest_expense = Column(Float)
     annual_debt_service = Column(Float)
     ebit = Column(Float)
+    collateral_value = Column(Float)
+    bankruptcies_last_7y = Column(Integer, default=0, nullable=False)
+    industry_metrics = Column(JSONB, default=dict, nullable=False)
     status = Column(
         Enum(ApplicationStatus),
         default=ApplicationStatus.new,

@@ -10,6 +10,8 @@ const EMPTY: ApplicationFormData = {
   loan_amount: '', loan_purpose: '', loan_purpose_details: '', loan_term_months: '',
   annual_revenue: '', ebitda: '', existing_debt: '', total_assets: '',
   current_assets: '', current_liabilities: '', interest_expense: '', annual_debt_service: '', ebit: '',
+  collateral_value: '', bankruptcies_last_7y: '0',
+  industry_metrics: {},
 }
 
 interface Ctx {

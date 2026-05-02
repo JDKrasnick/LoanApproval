@@ -71,3 +71,52 @@ export const LOAN_PURPOSES = [
 export const BUSINESS_STRUCTURES = ['LLC', 'C-Corp', 'S-Corp', 'Sole Proprietorship', 'Partnership']
 
 export const LOAN_TERMS = [12, 24, 36, 48, 60]
+
+// Maps selected industry → spec track. Must match backend INDUSTRY_TRACK.
+export function industryTrack(industry: string): 'hospitality' | 'tech' | 'retail' | 'healthcare' | 'industrials' | null {
+  const k = industry.toLowerCase().trim()
+  if (['saas', 'technology', 'software'].includes(k)) return 'tech'
+  if (k === 'healthcare') return 'healthcare'
+  if (k === 'retail') return 'retail'
+  if (['hospitality', 'restaurants', 'food & beverage', 'entertainment'].includes(k)) return 'hospitality'
+  if (['manufacturing', 'construction', 'real estate', 'transportation'].includes(k)) return 'industrials'
+  return null
+}
+
+export const INDUSTRY_METRIC_SPECS: Record<string, { key: string; label: string; helper: string; suffix?: string }[]> = {
+  hospitality: [
+    { key: 'revpar', label: 'RevPAR', helper: 'Total room revenue / available rooms', suffix: '$' },
+    { key: 'gop_per_room', label: 'Gross Operating Profit / Room', helper: 'GOP per available room', suffix: '$' },
+    { key: 'occupancy_rate', label: 'Occupancy Rate', helper: 'Rooms sold / rooms available', suffix: '%' },
+    { key: 'cap_rate', label: 'Cap Rate', helper: 'NOI / property value', suffix: '%' },
+    { key: 'current_ratio', label: 'Current Ratio', helper: 'Current assets / current liabilities' },
+  ],
+  tech: [
+    { key: 'revenue_growth_yoy', label: 'Revenue Growth YoY', helper: 'Year-over-year revenue growth', suffix: '%' },
+    { key: 'gross_margin', label: 'Gross Margin', helper: '(Revenue − COGS) / Revenue', suffix: '%' },
+    { key: 'customer_concentration', label: 'Customer Concentration', helper: 'Top customer share of revenue', suffix: '%' },
+    { key: 'burn_coverage_months', label: 'Monthly Burn Coverage', helper: 'Cash / monthly burn (months)' },
+    { key: 'nrr', label: 'Net Revenue Retention', helper: 'NRR %', suffix: '%' },
+  ],
+  retail: [
+    { key: 'sales_per_sqft', label: 'Sales per Sq Ft', helper: 'Annual sales / retail sq ft', suffix: '$' },
+    { key: 'gmroi', label: 'GMROI', helper: 'Gross margin return on inventory investment' },
+    { key: 'inventory_turnover', label: 'Inventory Turnover', helper: 'Turns per year' },
+    { key: 'gross_margin', label: 'Gross Margin', helper: '(Revenue − COGS) / Revenue', suffix: '%' },
+    { key: 'same_store_sales_yoy', label: 'Same-Store Sales Growth YoY', suffix: '%', helper: 'Comparable store sales change' },
+  ],
+  healthcare: [
+    { key: 'operating_margin', label: 'Operating Margin', helper: 'Operating income / revenue', suffix: '%' },
+    { key: 'days_cash_on_hand', label: 'Days Cash on Hand', helper: 'Cash / daily operating expense' },
+    { key: 'days_in_ar', label: 'Days in Accounts Receivable', helper: 'AR / avg daily revenue' },
+    { key: 'payer_mix_gov', label: 'Payer Mix — Medicare/Medicaid', helper: 'Share of revenue from gov payers', suffix: '%' },
+    { key: 'collection_rate', label: 'Collection Rate', helper: 'Collected / billed', suffix: '%' },
+  ],
+  industrials: [
+    { key: 'asset_turnover', label: 'Asset Turnover', helper: 'Revenue / total assets' },
+    { key: 'interest_coverage', label: 'Interest Coverage Ratio', helper: 'EBIT / interest expense' },
+    { key: 'gross_margin', label: 'Gross Margin', helper: '(Revenue − COGS) / Revenue', suffix: '%' },
+    { key: 'ocf_margin', label: 'Operating Cash Flow Margin', helper: 'OCF / revenue', suffix: '%' },
+    { key: 'backlog_to_revenue', label: 'Backlog-to-Revenue Ratio', helper: 'Contracted backlog / annual revenue' },
+  ],
+}

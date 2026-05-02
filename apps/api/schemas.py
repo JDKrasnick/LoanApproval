@@ -47,6 +47,9 @@ class ApplicationCreate(BaseModel):
     interest_expense: Optional[float] = None
     annual_debt_service: Optional[float] = None
     ebit: Optional[float] = None
+    collateral_value: Optional[float] = Field(default=None, ge=0)
+    bankruptcies_last_7y: int = Field(default=0, ge=0)
+    industry_metrics: dict[str, float] = Field(default_factory=dict)
 
 
 class ApplicationStatusUpdate(BaseModel):
@@ -69,6 +72,9 @@ class ApplicationOut(BaseModel):
     interest_expense: Optional[float]
     annual_debt_service: Optional[float]
     ebit: Optional[float]
+    collateral_value: Optional[float] = None
+    bankruptcies_last_7y: int = 0
+    industry_metrics: dict[str, Any] = Field(default_factory=dict)
     status: ApplicationStatus
     submitted_at: datetime
     updated_at: datetime
@@ -115,15 +121,6 @@ class DocumentOut(BaseModel):
 
 
 # ── Decision ──────────────────────────────────────────────────────────────────
-
-class RuleResult(BaseModel):
-    rule: str
-    formula: str
-    value: Optional[float]
-    threshold: float
-    passed: bool
-    severity: str  # "hard_decline" | "caution" | "pass"
-
 
 class DecisionOut(BaseModel):
     id: uuid.UUID

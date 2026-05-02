@@ -27,7 +27,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-change-in-prod}
     ports:
-      - "8000:8000"
+      - "5004:5004"
     depends_on:
       - db
     volumes:
@@ -40,7 +40,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5004}
     ports:
       - "3000:3000"
     depends_on:

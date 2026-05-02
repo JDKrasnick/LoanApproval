@@ -34,6 +34,9 @@ export interface Application {
   interest_expense?: number
   annual_debt_service?: number
   ebit?: number
+  collateral_value?: number
+  bankruptcies_last_7y?: number
+  industry_metrics?: Record<string, number>
   status: ApplicationStatus
   submitted_at: string
   updated_at: string
@@ -57,14 +60,17 @@ export interface ApplicationListResponse {
   page_size: number
 }
 
-export interface RuleResult {
+export type MetricTier = 'approve' | 'human_review' | 'concern' | 'reject'
+
+export interface MetricResult {
+  category: 'core' | 'industry'
   rule: string
-  formula: string
+  key: string
   value: number | null
-  threshold: number
-  passed: boolean
-  severity: 'hard_decline' | 'caution' | 'pass'
-  direction: 'min' | 'max'
+  tier: number // 2 | 1 | 0 | -1
+  tier_label: MetricTier
+  score: number
+  weight?: number
 }
 
 export interface Decision {
@@ -73,14 +79,21 @@ export interface Decision {
   outcome: DecisionOutcome
   rationale: {
     summary: string
-    hard_fails: string[]
-    cautions: string[]
-    passes: string[]
     explanation?: string
+    model_used?: string
+    company_score?: number
+    industry_score?: number | null
+    final_score?: number
+    industry_track?: string | null
+    loan_bracket?: string
+    approve_threshold?: number
+    hr_lower_threshold?: number
+    hard_stops?: string[]
+    caps?: string[]
   }
   score: number | null
   ml_default_probability: number | null
-  triggered_rules: RuleResult[]
+  triggered_rules: MetricResult[]
   decided_at: string
 }
 
@@ -130,4 +143,8 @@ export interface ApplicationFormData {
   interest_expense: string
   annual_debt_service: string
   ebit: string
+  collateral_value: string
+  bankruptcies_last_7y: string
+  // Step 3b — Industry-specific metrics (keys depend on industry track)
+  industry_metrics: Record<string, string>
 }

@@ -15,8 +15,34 @@ from llm.client import explain_decision
 router = APIRouter(prefix="/decisions", tags=["decisions"])
 
 
+def _triggered_rules_payload(result: rules_engine.EngineResult) -> list[dict]:
+    payload = []
+    for m in result.core_metrics:
+        payload.append({
+            "category": "core",
+            "rule": m.label,
+            "key": m.key,
+            "value": m.value,
+            "tier": m.tier,
+            "tier_label": m.tier_label,
+            "score": m.score,
+            "weight": m.weight,
+        })
+    for m in result.industry_metrics:
+        payload.append({
+            "category": "industry",
+            "rule": m.label,
+            "key": m.key,
+            "value": m.value,
+            "tier": m.tier,
+            "tier_label": m.tier_label,
+            "score": m.score,
+        })
+    return payload
+
+
 @router.post("/evaluate/{application_id}", response_model=DecisionOut)
-def evaluate_application(application_id: uuid.UUID, db: Session = Depends(get_db)):
+async def evaluate_application(application_id: uuid.UUID, db: Session = Depends(get_db)):
     app = (
         db.query(Application)
         .options(joinedload(Application.borrower))
@@ -27,26 +53,46 @@ def evaluate_application(application_id: uuid.UUID, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Application not found")
 
     result = rules_engine.evaluate(app)
+    triggered = _triggered_rules_payload(result)
 
-    # Upsert decision
+    # Always generate a plain-English explanation so applicants see why.
+    explanation, model_used = await explain_decision(
+        outcome=result.outcome.value,
+        final_score=result.final_score,
+        company_score=result.company_score,
+        industry_score=result.industry_score,
+        industry_track=result.industry_track,
+        loan_bracket=result.loan_bracket,
+        approve_threshold=result.approve_threshold,
+        hr_lower_threshold=result.hr_lower_threshold,
+        loan_amount=app.loan_amount,
+        industry=app.borrower.industry,
+        core_metrics=[m.__dict__ for m in result.core_metrics],
+        industry_metrics=[m.__dict__ for m in result.industry_metrics],
+        hard_stops=result.hard_stops,
+        caps=result.caps,
+    )
+    rationale = dict(result.rationale)
+    rationale["explanation"] = explanation
+    rationale["model_used"] = model_used
+
     existing = db.query(Decision).filter(Decision.application_id == application_id).first()
     if existing:
         existing.outcome = result.outcome
-        existing.rationale = result.rationale
-        existing.score = result.score
-        existing.triggered_rules = [r.__dict__ for r in result.rules]
+        existing.rationale = rationale
+        existing.score = result.final_score
+        existing.triggered_rules = triggered
         decision = existing
     else:
         decision = Decision(
             application_id=application_id,
             outcome=result.outcome,
-            rationale=result.rationale,
-            score=result.score,
-            triggered_rules=[r.__dict__ for r in result.rules],
+            rationale=rationale,
+            score=result.final_score,
+            triggered_rules=triggered,
         )
         db.add(decision)
 
-    # Update application status based on decision
     status_map = {
         "approved": ApplicationStatus.approved,
         "declined": ApplicationStatus.declined,
@@ -60,11 +106,13 @@ def evaluate_application(application_id: uuid.UUID, db: Session = Depends(get_db
         "decision_made",
         {
             "outcome": result.outcome.value,
-            "score": result.score,
-            "industry_multiplier": result.industry_multiplier,
-            "borrower_type": result.borrower_type,
-            "hard_fails": result.rationale.get("hard_fails", []),
-            "cautions": result.rationale.get("cautions", []),
+            "final_score": result.final_score,
+            "company_score": result.company_score,
+            "industry_score": result.industry_score,
+            "industry_track": result.industry_track,
+            "loan_bracket": result.loan_bracket,
+            "hard_stops": result.hard_stops,
+            "caps": result.caps,
         },
     )
     db.commit()
@@ -88,23 +136,29 @@ async def explain_application_decision(application_id: uuid.UUID, db: Session = 
         raise HTTPException(status_code=404, detail="Application not found")
 
     rationale = dict(decision.rationale)
-    triggered_rules = list(decision.triggered_rules or [])
+    triggered = list(decision.triggered_rules or [])
+    core = [r for r in triggered if r.get("category") == "core"]
+    industry = [r for r in triggered if r.get("category") == "industry"]
 
     explanation, model_used = await explain_decision(
         outcome=decision.outcome.value,
-        score=decision.score or 0.0,
-        borrower_type=rationale.get("borrower_type", "unknown"),
-        years_in_operation=app.borrower.years_in_operation,
-        industry=app.borrower.industry,
-        industry_multiplier=rationale.get("industry_multiplier", 1.0),
+        final_score=decision.score or 0.0,
+        company_score=rationale.get("company_score", 0.0),
+        industry_score=rationale.get("industry_score"),
+        industry_track=rationale.get("industry_track"),
+        loan_bracket=rationale.get("loan_bracket", ""),
+        approve_threshold=rationale.get("approve_threshold", 0.0),
+        hr_lower_threshold=rationale.get("hr_lower_threshold", 0.0),
         loan_amount=app.loan_amount,
-        triggered_rules=triggered_rules,
-        hard_fails=rationale.get("hard_fails", []),
-        cautions=rationale.get("cautions", []),
-        passes=rationale.get("passes", []),
+        industry=app.borrower.industry,
+        core_metrics=core,
+        industry_metrics=industry,
+        hard_stops=rationale.get("hard_stops", []),
+        caps=rationale.get("caps", []),
     )
 
     rationale["explanation"] = explanation
+    rationale["model_used"] = model_used
     decision.rationale = rationale
 
     log_event(db, application_id, "explanation_generated", {"model_used": model_used})

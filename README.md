@@ -25,8 +25,8 @@ docker compose up db -d
 # 3. Backend
 cd apps/api
 pip3 install -r requirements.txt
-uvicorn main:app --reload
-# → http://localhost:8000/docs
+uvicorn main:app --reload --port 5004
+# → http://localhost:5004/docs
 
 # 4. Frontend (new terminal)
 cd apps/web
@@ -76,7 +76,7 @@ LoanApproval/
 
 ## API Reference
 
-Interactive docs at `http://localhost:8000/docs`
+Interactive docs at `http://localhost:5004/docs`
 
 | Method | Path | Description |
 |--------|------|-------------|

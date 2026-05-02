@@ -139,9 +139,9 @@ function StatusContent() {
                 <p className="text-slate-600 text-sm mb-4">
                   After reviewing your application, we're unable to offer financing at this time.
                 </p>
-                {decision.rationale.hard_fails.length > 0 && (
+                {(decision.rationale.hard_stops ?? []).length > 0 && (
                   <ul className="text-sm text-slate-600 space-y-1 mb-4">
-                    {decision.rationale.hard_fails.map(f => (
+                    {decision.rationale.hard_stops!.map(f => (
                       <li key={f} className="flex items-start gap-2"><span>•</span>{f}</li>
                     ))}
                   </ul>
@@ -149,6 +149,22 @@ function StatusContent() {
                 <a href="mailto:support@loanapproval.com" className="text-sm text-blue-600 font-medium hover:underline">
                   Contact Us to Discuss Options
                 </a>
+              </div>
+            )}
+
+            {decision?.rationale.explanation && (
+              <div className="rounded-lg border border-slate-200 bg-white shadow-sm p-6 mb-4">
+                <h2 className="text-lg font-semibold text-slate-900 mb-3">Why You Got This Decision</h2>
+                {decision.score != null && (
+                  <p className="text-xs text-slate-500 mb-3">
+                    Final score <span className="font-mono font-semibold text-slate-800">{decision.score.toFixed(2)}</span> / 2.00
+                    {decision.rationale.loan_bracket && <> · bracket {decision.rationale.loan_bracket}</>}
+                    {decision.rationale.approve_threshold != null && <> · approve ≥ {decision.rationale.approve_threshold.toFixed(2)}</>}
+                  </p>
+                )}
+                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                  {decision.rationale.explanation}
+                </p>
               </div>
             )}
 
